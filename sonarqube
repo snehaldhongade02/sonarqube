@@ -1,0 +1,120 @@
+Installation of Sonarqube on CentOS-7
+
+Note: While Installing Sonarqube Version should be specific (match) otherwise, there will be chances of errors 
+      java version, sonarqube version, database version should be match..., 
+
+Sonarqube default port is 9000
+
+Prerequisites ===>
+
+SonarQube server will require 3GB+ RAM to work effeciently
+
+Requrement ===>
+
+t2.medium or t2.large 
+
+### Install Database
+
+rpm -ivh http://repo.mysql.com/mysql57-community-release-el7.rpm
+rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+yum install mysql-server -y
+systemctl start mysqld
+
+grep 'temporary password' /var/log/mysqld.log
+mysql -uroot -p'password'  <--- replace password with generated password and should be in a string
+mysql_secure_installation  <--- doing some configuration in mysql,,, set new password for root here ( ex-Cloudblitz@123 )
+ 
+
+### Install Java
+
+yum install wget epel-release -y
+yum install java -y
+wget https://download.bell-sw.com/java/11.0.4/bellsoft-jdk11.0.4-linux-amd64.rpm
+rpm -ivh bellsoft-jdk11.0.4-linux-amd64.rpm
+#alternatives --config java
+
+### Configure Linux System for Sonarqube
+
+echo 'vm.max_map_count=262144' >/etc/sysctl.conf
+sysctl -p
+echo '* - nofile 80000' >>/etc/security/limits.conf
+sed -i -e '/query_cache_size/ d' -e '$ a query_cache_size = 15M' /etc/my.cnf
+systemctl restart mysqld
+
+### Configure Database for Sonarqube (here we are creating proper user for the database and granting required permission to the user..., coz this is the best practice)
+
+mysql -p -u root  (mysql -uroot -pCloudblitz@123)
+mysql>
+    create database sonarqube;
+    create user 'sonarqube'@'localhost' identified by 'Redhat@123';
+    grant all privileges on sonarqube.* to 'sonarqube'@'localhost';
+    flush privileges;
+
+### Install Sonarqube
+
+yum install unzip -y
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-7.9.1.zip
+cd /opt
+unzip ~/sonarqube-7.9.1.zip
+mv sonarqube-7.9.1 sonar
+
+### Configure Sonarqube (all these configuration is same as the context.xml file in tomcat)
+
+sed -i -e '/^sonar.jdbc.username/ d' -e '/^sonar.jdbc.password/ d' -e '/^sonar.jdbc.url/ d' -e '/^sonar.web.host/ d' -e '/^sonar.web.port/ d' /opt/sonar/conf/sonar.properties
+sed -i -e '/#sonar.jdbc.username/ a sonar.jdbc.username=sonarqube' -e '/#sonar.jdbc.password/ a sonar.jdbc.password=Redhat@123' -e '/InnoDB/ a sonar.jdbc.url=jdbc.mysql://localhost:3306/sonarqube?useUnicode=true&characterEncoding=utf&rewriteBatchedStatements=true&useConfigs=maxPerformance' -e '/#sonar.web.host/ a sonar.web.host=0.0.0.0' /opt/sonar/conf/sonar.properties
+useradd sonar    (for the best practice so that process user will sonar)
+chown sonar:sonar /opt/sonar/ -R
+sed -i -e '/^#RUN_AS_USER/ c RUN_AS_USER=sonar' /opt/sonar/bin/linux-x86-64/sonar.sh
+
+
+Note: before starting the sonarqube, we have to make sure that...,
+      vi /opt/sonar/conf/wrapper.conf    <--- wrapper.java.command=java   <--- wrapper command java hi command bellsoft company chi asli pahije ithe...,
+      java --version   <--- dont see the bellsoft..., in that situation ,,, we can use Alternative Command to change into Bellsoft
+      alternatives --config java  
+      2 <--- selecting Bellsoft java...,
+
+### Start Sonarqube
+
+/opt/sonar/bin/linux*/sonar.sh start
+/opt/sonar/bin/linux*/sonar.sh status
+/opt/sonar/logs
+
+
+JDBC - Java - DB -
+http
+https
+jdbc.mysql://localhost:3306/sonarqube
+sonar.jdbc.username=sonarqube'
+sonar.jdbc.password=Cloudblitz@123'
+wp-config
+
+------------------------------------------------------------------------------------------------------
+
+1st step---> Installation of Databasee i.e (mysql), 
+2nd step---> Install Java
+3rd step---> Configure Linux Core System for Sonarqube
+4th step---> Configure Database (database username, password, JDBC driver - for connection of sonarqube and database )
+5th step---> Install Sonarqube..., here we have to download zip file from "distribution" section
+6th step---> Configure Sonarqube
+7th step---> Start Web-Server
+
+ 
+
+we need to install java as well, because it is a java based application..., but not will run "sonarqube" with normal jave package i.e open-jdk-11,
+   for sonarqube we have to install bellsoft-company java package..., because this java package contains "proper libraries" to run the sonarqube.
+
+if directly install java package of bellsoft-company so that will error of dependencies so that we have to install first normal java package...,
+try for error ===>
+
+yum install wget -y
+wget https://download.bell-sw.com/java/11.0.4/bellsoft-jdk11.0.4-linux-amd64.rpm
+rpm -ivh bellsoft-jdk11.0.4-linux-amd64.rpm  ---> dependencies failed so we need to install first normal java package --- requre dependencies will download from this java
+
+public-ip:9000
+
+default Username & Password ===> admin & admin 
+
+### test-job
+### admin redhat
+#### wertyuio
+### redhat###

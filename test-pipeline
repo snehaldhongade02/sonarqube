@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+    stages {
+        stage('pull') { 
+            steps {
+               echo "successfull pull from private repo"
+              git branch: 'master', url: 'https://gitlab.com/hanumane96/studentapp-ui.git'
+            }
+        }
+        stage('build') { 
+            steps {
+                echo "build by maven " 
+                sh '''
+                /opt/apache-maven-3.9.4/bin/mvn clean package
+                   '''
+            }
+        }
+        stage('test') {
+            steps {
+                echo "test is getting successfull by sonarqube"
+                withSonarQubeEnv(installationName: 'sonar', credentialsId: 'sonarqube-token') {
+                  sh '/opt/apache-maven-3.9.4/bin/mvn sonar:sonar -Dsonar.projectKey=studentapp'
+                }
+            }
+        }
+        stage('quality-gate') {
+            steps {
+                echo "quality gate pass"
+                timeout(time: 10, unit: 'MINUTES') {
+                waitForQualityGate abortPipeline: true
+                }
+            }
+        }    
+        stage('Deploy') {
+            steps {
+                echo 'Application deploy on dev'
+                deploy adapters: [tomcat8(credentialsId: 'tomcat', path: '', url: 'http://3.8.20.215:8080/')], contextPath: '/', war: '**/*.war'
+        }
+        }
+    } 
+}   
